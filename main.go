@@ -18,8 +18,11 @@ import (
 // .. description
 // ==> JSON with
 
-var bucketName string
-var region string
+var (
+	bucketName string
+	region     string
+	baseFolder string
+)
 
 func init() {
 	const (
@@ -27,11 +30,15 @@ func init() {
 		usageBucket       = "Amazon S3 bucket name to deploy"
 		defaultRegionName = "us-west-1"
 		usageRegion       = "Amazon S3 region"
+		defaultFolder     = "."
+		usageFolder       = "Path to assets folder"
 	)
 	flag.StringVar(&bucketName, "bucket_name", defaultBucketName, usageBucket)
 	flag.StringVar(&bucketName, "b", defaultBucketName, usageBucket+" (shorthand)")
 	flag.StringVar(&region, "region", defaultRegionName, usageRegion)
 	flag.StringVar(&region, "r", defaultRegionName, usageRegion+" (shorthand)")
+	flag.StringVar(&baseFolder, "base", defaultFolder, usageFolder)
+	flag.StringVar(&baseFolder, "f", defaultFolder, usageFolder+" (shorthand)")
 }
 
 func main() {
@@ -52,10 +59,10 @@ func main() {
 		return
 	}
 
-	files, _ := fstools.ReadFiles(".")
+	files, _ := fstools.ReadFiles(baseFolder)
 
 	payloads := ld.Map(files, func(s string, _ int) s3tools.Payload {
-		return s3tools.Payload{FilePath: s, S3Service: svc, Bucket: bucketName}
+		return s3tools.Payload{FilePath: s, S3Service: svc, Bucket: bucketName, BaseFolder: baseFolder}
 	}).([]s3tools.Payload)
 
 	fmt.Printf("Uploading %d files\n", len(payloads))

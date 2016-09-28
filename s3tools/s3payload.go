@@ -6,6 +6,7 @@ import (
 	"mime"
 	"os"
 	"path"
+	"path/filepath"
 
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
@@ -13,9 +14,10 @@ import (
 
 // Payload is a type to handle worker operations
 type Payload struct {
-	Bucket    string
-	FilePath  string
-	S3Service *s3.S3
+	Bucket     string
+	FilePath   string
+	S3Service  *s3.S3
+	BaseFolder string
 }
 
 func (payload Payload) process() error {
@@ -24,15 +26,20 @@ func (payload Payload) process() error {
 		log.Fatal("Failed to open file", ferr)
 		return ferr
 	}
+	rel, errRel := filepath.Rel(payload.BaseFolder, payload.FilePath)
+
+	if errRel != nil {
+		return errRel
+	}
 
 	uploader := s3manager.NewUploaderWithClient(payload.S3Service)
 
 	uploadInput := s3manager.UploadInput{
 		Body:   file,
 		Bucket: &payload.Bucket,
-		Key:    &payload.FilePath,
+		Key:    &rel,
 	}
-	updateMetadata(payload.FilePath, &uploadInput)
+	updateMetadata(rel, &uploadInput)
 
 	_, err := uploader.Upload(&uploadInput)
 
