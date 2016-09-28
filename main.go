@@ -4,9 +4,12 @@ import (
 	"flag"
 	"fmt"
 
+	ld "github.com/ahl5esoft/golang-underscore"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/yury-sannikov/go-cloudfront-deploy/fstools"
 	"github.com/yury-sannikov/go-cloudfront-deploy/s3tools"
 )
 
@@ -44,4 +47,19 @@ func main() {
 	svc := s3.New(sess)
 
 	s3tools.CheckOrCreateBucket(svc, bucketName)
+	files, _ := fstools.ReadFiles(".")
+
+	payloads := ld.Map(files, func(s string, _ int) s3tools.Payload {
+		return s3tools.Payload{FilePath: s, S3Service: svc, Bucket: bucketName}
+	}).([]s3tools.Payload)
+
+	fmt.Printf("%v\n", payloads)
+
+	dispatcher := s3tools.InitDispatcher(5, 10)
+
+	for _, payload := range payloads {
+		work := s3tools.Job{Payload: payload}
+		dispatcher.EnqueueJob(work)
+	}
+	s3tools.DispatcherWaitGroup.Wait()
 }
