@@ -46,14 +46,19 @@ func main() {
 	sess := session.New(config)
 	svc := s3.New(sess)
 
-	s3tools.CheckOrCreateBucket(svc, bucketName)
+	bucketErr := s3tools.CheckOrCreateBucket(svc, bucketName)
+
+	if bucketErr != nil {
+		return
+	}
+
 	files, _ := fstools.ReadFiles(".")
 
 	payloads := ld.Map(files, func(s string, _ int) s3tools.Payload {
 		return s3tools.Payload{FilePath: s, S3Service: svc, Bucket: bucketName}
 	}).([]s3tools.Payload)
 
-	fmt.Printf("%v\n", payloads)
+	fmt.Printf("Uploading %d files\n", len(payloads))
 
 	dispatcher := s3tools.InitDispatcher(5, 10)
 
@@ -61,5 +66,8 @@ func main() {
 		work := s3tools.Job{Payload: payload}
 		dispatcher.EnqueueJob(work)
 	}
+
 	s3tools.DispatcherWaitGroup.Wait()
+
+	fmt.Printf("Done\n")
 }

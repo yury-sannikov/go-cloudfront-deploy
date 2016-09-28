@@ -22,6 +22,7 @@ func (payload Payload) process() error {
 		log.Fatal("Failed to open file", ferr)
 		return ferr
 	}
+
 	uploader := s3manager.NewUploaderWithClient(payload.S3Service)
 
 	_, err := uploader.Upload(&s3manager.UploadInput{
