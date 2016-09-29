@@ -5,6 +5,7 @@ import (
 	"log"
 	"reflect"
 
+	ld "github.com/ahl5esoft/golang-underscore"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/s3"
 )
@@ -115,4 +116,45 @@ func addBucketPolicy(service *s3.S3, bucketName string) error {
 		fmt.Printf("Unable to set up ACL policy for %s: %s\n", bucketName, perr)
 	}
 	return perr
+}
+
+//DropBucket drop bucket
+func DropBucket(service *s3.S3, bucketName string) error {
+	err := service.ListObjectsPages(&s3.ListObjectsInput{
+		Bucket: &bucketName,
+	}, func(p *s3.ListObjectsOutput, last bool) (shouldContinue bool) {
+
+		fmt.Printf("Deleting chunk of %d objects\n", len(p.Contents))
+
+		if len(p.Contents) == 0 {
+			return false
+		}
+
+		objs := ld.Map(p.Contents, func(o *s3.Object, _ int) *s3.ObjectIdentifier {
+			return &s3.ObjectIdentifier{
+				Key: o.Key,
+			}
+		}).([]*s3.ObjectIdentifier)
+
+		_, err := service.DeleteObjects(&s3.DeleteObjectsInput{
+			Bucket: &bucketName,
+			Delete: &s3.Delete{
+				Objects: objs,
+			},
+		})
+
+		if err != nil {
+			fmt.Printf("failed to delete objects %s\n", err)
+			return false
+		}
+
+		return true
+	})
+
+	if err != nil {
+		fmt.Printf("failed to list objects %s\n", err)
+	} else {
+		fmt.Println("Done")
+	}
+	return err
 }

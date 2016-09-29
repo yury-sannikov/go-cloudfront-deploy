@@ -22,6 +22,7 @@ var (
 	bucketName string
 	region     string
 	baseFolder string
+	dropBucket bool
 )
 
 func init() {
@@ -39,6 +40,7 @@ func init() {
 	flag.StringVar(&region, "r", defaultRegionName, usageRegion+" (shorthand)")
 	flag.StringVar(&baseFolder, "base", defaultFolder, usageFolder)
 	flag.StringVar(&baseFolder, "f", defaultFolder, usageFolder+" (shorthand)")
+	flag.BoolVar(&dropBucket, "drop", false, "Drop S3 bucket initially")
 }
 
 func main() {
@@ -52,6 +54,11 @@ func main() {
 	config := &aws.Config{Region: &region}
 	sess := session.New(config)
 	svc := s3.New(sess)
+
+	if dropBucket {
+		fmt.Printf("Dropping bucket %s\n", bucketName)
+		s3tools.DropBucket(svc, bucketName)
+	}
 
 	bucketErr := s3tools.CheckOrCreateBucket(svc, bucketName)
 
