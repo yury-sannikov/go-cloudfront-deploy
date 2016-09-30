@@ -158,3 +158,42 @@ func DropBucket(service *s3.S3, bucketName string) error {
 	}
 	return err
 }
+
+//GetBucketTagging return an array of associated S3 tags
+func GetBucketTagging(service *s3.S3, bucketName string) ([]*s3.Tag, error) {
+	params := &s3.GetBucketTaggingInput{
+		Bucket: &bucketName,
+	}
+	resp, err := service.GetBucketTagging(params)
+
+	if err != nil {
+		if awsErr, ok := err.(awserr.Error); ok {
+			if awsErr.Code() == "NoSuchTagSet" {
+				var tagSet []*s3.Tag
+				return tagSet, nil
+			}
+		}
+		fmt.Println(err.Error())
+		return nil, err
+	}
+	return resp.TagSet, nil
+}
+
+//SetBucketTagging replace tag with specified key/value
+func SetBucketTagging(service *s3.S3, bucketName string, tagKey string, tagValue string) error {
+	params := &s3.PutBucketTaggingInput{
+		Bucket: &bucketName,
+		Tagging: &s3.Tagging{
+			TagSet: []*s3.Tag{
+				{
+					Key:   &tagKey,
+					Value: &tagValue,
+				},
+			},
+		},
+	}
+
+	_, err := service.PutBucketTagging(params)
+
+	return err
+}
