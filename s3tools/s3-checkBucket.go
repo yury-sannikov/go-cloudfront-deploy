@@ -118,8 +118,8 @@ func addBucketPolicy(service *s3.S3, bucketName string) error {
 	return perr
 }
 
-//DropBucket drop bucket
-func DropBucket(service *s3.S3, bucketName string) error {
+//CleanBucket drop bucket
+func CleanBucket(service *s3.S3, bucketName string) error {
 	err := service.ListObjectsPages(&s3.ListObjectsInput{
 		Bucket: &bucketName,
 	}, func(p *s3.ListObjectsOutput, last bool) (shouldContinue bool) {
@@ -152,6 +152,13 @@ func DropBucket(service *s3.S3, bucketName string) error {
 	})
 
 	if err != nil {
+		if awsErr, ok := err.(awserr.Error); ok {
+			if awsErr.Code() == "NoSuchBucket" {
+				fmt.Printf("Can't clean bucket. No such bucket\n")
+				return nil
+			}
+		}
+
 		fmt.Printf("failed to list objects %s\n", err)
 	} else {
 		fmt.Println("Done")

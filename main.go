@@ -68,8 +68,8 @@ func cleanHandler(options *options) error {
 	sess := session.New(config)
 	svc := s3.New(sess)
 
-	fmt.Printf("Dropping bucket %s\n", options.BucketName)
-	return s3tools.DropBucket(svc, options.BucketName)
+	fmt.Printf("Cleaning bucket %s\n", options.BucketName)
+	return s3tools.CleanBucket(svc, options.BucketName)
 }
 
 func s3DeployHandler(options *options) error {
