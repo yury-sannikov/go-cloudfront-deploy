@@ -46,6 +46,7 @@ func createDistributionConfig(bucketName string, region string) *cloudfront.Dist
 
 	domainName := fmt.Sprintf("%s.s3-website-%s.amazonaws.com", bucketName, region)
 	targetOriginID := fmt.Sprintf("sitebuilder-%s", domainName)
+	wwwAlias := fmt.Sprintf("www.%s", bucketName)
 
 	return &cloudfront.DistributionConfig{ // Required
 		CallerReference: &callerRef,
@@ -127,8 +128,11 @@ func createDistributionConfig(bucketName string, region string) *cloudfront.Dist
 			},
 		},
 		Aliases: &cloudfront.Aliases{
-			Quantity: aws.Int64(0),
-			Items:    []*string{},
+			Quantity: aws.Int64(2),
+			Items: []*string{
+				aws.String(bucketName),
+				aws.String(wwwAlias),
+			},
 		},
 		CacheBehaviors: &cloudfront.CacheBehaviors{
 			Quantity: aws.Int64(0), // Required
