@@ -51,7 +51,7 @@ func (payload Payload) process() error {
 
 func updateMetadata(name string, input *s3manager.UploadInput) {
 	var DefaultCacheControl = "max-age=31536000,public"
-	var HTMLCacheControl = "max-age=86400,public"
+	var HTMLCacheControl = "max-age=0,public"
 
 	input.CacheControl = &DefaultCacheControl
 
